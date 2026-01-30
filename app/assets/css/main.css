@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* 修复锚点跳转时被 Header 遮住的问题 */
+.prose :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: calc(var(--ui-header-height));
+}
