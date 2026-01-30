@@ -30,7 +30,7 @@ export default defineNuxtConfig({
     storage: 'localStorage'
   },
   app: {
-    baseURL: '/',
+    baseURL: '/process-card-docs/',
     buildAssetsDir: 'assets',
     head: {
       htmlAttrs: {
