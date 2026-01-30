@@ -11,11 +11,10 @@ description: '开发环境配置与项目启动指南'
 
 | 软件 | 版本要求 | 说明 |
 |------|----------|------|
-| **JDK** | 21+ | 推荐使用 Eclipse Temurin 或 Amazon Corretto |
-| **Node.js** | 18+ | 推荐使用 LTS 版本 |
-| **MySQL** | 8.0+ | 数据库服务 |
+| **JDK** | 21+ | 推荐使用 Amazon Corretto |
+| **Node.js** | 22 LTS | 推荐使用 nvm 管理版本 |
+| **MySQL** | 8.4 LTS | 数据库服务 |
 | **Maven** | 3.9+ | 后端构建工具 |
-| **pnpm** | 8+ | 推荐的包管理器（也可使用 npm/yarn） |
 | **Git** | 2.x | 版本控制 |
 
 ### 可选软件
@@ -26,113 +25,121 @@ description: '开发环境配置与项目启动指南'
 | **Rust** | Tauri 桌面应用开发需要 |
 | **VS Code** | 推荐的代码编辑器 |
 | **IntelliJ IDEA** | 后端开发 IDE |
+| **WebStorm** | 前端开发 IDE，和 VS Code 二选一 |
 
 ## 安装步骤
 
 ### 1. 安装 JDK 21
 
+推荐使用 SDKMAN! 管理 Java 版本
+
 ::tabs
-  ::div{label="macOS"}
-  使用 Homebrew 安装：
+  ::div{label="macOS/Linux"}
+
   ```bash
-  # 安装 Temurin JDK 21
-  brew install --cask temurin@21
+  # 安装 SDKMAN!
+  curl -s "https://get.sdkman.io" | bash
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+  
+  # 安装 Amazon Corretto 21
+  sdk install java 21-amzn
+  
+  # 设置为默认版本
+  sdk default java 21-amzn
   
   # 验证安装
   java -version
   ```
+
   ::
 
   ::div{label="Windows"}
-  1. 下载 [Eclipse Temurin JDK 21](https://adoptium.net/)
+
+  1. 下载 [Amazon Corretto 21](https://aws.amazon.com/corretto/)
   2. 运行安装程序
   3. 设置环境变量 `JAVA_HOME`
   4. 验证安装：
+
   ```powershell
   java -version
   ```
-  ::
 
-  ::div{label="Linux"}
-  ```bash
-  # Ubuntu/Debian
-  sudo apt install openjdk-21-jdk
-  
-  # 验证安装
-  java -version
-  ```
   ::
 ::
 
 ### 2. 安装 Node.js
 
 ::tabs
-  ::div{label="macOS"}
-  ```bash
-  # 使用 Homebrew
-  brew install node@18
-  
-  # 或使用 nvm（推荐）
-  nvm install 18
-  nvm use 18
-  ```
-  ::
+  ::div{label="macOS/Linux"}
+  **推荐使用 nvm 管理 Node.js 版本**
 
-  ::div{label="Windows"}
-  1. 下载 [Node.js LTS](https://nodejs.org/)
-  2. 运行安装程序
-  3. 验证安装：
-  ```powershell
+  ```bash
+  # 安装 nvm
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+  
+  # 重新加载 shell 配置
+  source ~/.bashrc  # 或 source ~/.zshrc
+  
+  # 安装 Node.js 22 LTS
+  nvm install 22
+  nvm use 22
+  nvm alias default 22
+  
+  # 验证安装
   node -v
   npm -v
   ```
-  ::
 
-  ::div{label="Linux"}
-  ```bash
-  # 使用 nvm（推荐）
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-  nvm install 18
-  nvm use 18
-  ```
-  ::
-::
-
-### 3. 安装 pnpm
-
-```bash
-# 使用 npm 安装
-npm install -g pnpm
-
-# 验证安装
-pnpm -v
-```
-
-### 4. 安装 MySQL 8.0
-
-::tabs
-  ::div{label="macOS"}
-  ```bash
-  # 使用 Homebrew
-  brew install mysql
-  
-  # 启动服务
-  brew services start mysql
-  
-  # 设置 root 密码
-  mysql_secure_installation
-  ```
   ::
 
   ::div{label="Windows"}
-  1. 下载 [MySQL Installer](https://dev.mysql.com/downloads/installer/)
-  2. 选择 "MySQL Server" 进行安装
-  3. 配置 root 密码
+
+  1. 下载 [nvm-windows](https://github.com/coreybutler/nvm-windows/releases)
+  2. 运行安装程序
+  3. 安装 Node.js 22 LTS：
+
+  ```powershell
+  nvm install 22
+  nvm use 22
+  
+  # 验证安装
+  node -v
+  npm -v
+  ```
+
+  ::
+::
+
+### 3. 安装 MySQL 8.4 LTS
+
+::tabs
+  ::div{label="macOS/Windows/Linux"}
+  **推荐从官网下载安装包**
+
+  1. 访问 [MySQL 官方下载页面](https://dev.mysql.com/downloads/mysql/)
+  2. 选择 **MySQL 8.4.x LTS** 版本
+  3. 选择适合你操作系统的安装包
+  4. 运行安装程序并配置 root 密码
+  5. 启动 MySQL 服务
+
+  **macOS 验证：**
+
+  ```bash
+  mysql --version
+  ```
+
+  **Windows 验证：**
+
+  ```powershell
+  mysql --version
+  ```
+
   ::
 
   ::div{label="Docker"}
+
   ```bash
-  # 使用 Docker 运行 MySQL
+  # 使用 Docker 运行 MySQL 8.4
   docker run -d \
     --name mysql-dev \
     -e MYSQL_ROOT_PASSWORD=123456 \
@@ -140,12 +147,13 @@ pnpm -v
     -e MYSQL_USER=vt_admin \
     -e MYSQL_PASSWORD=123456 \
     -p 3306:3306 \
-    mysql:8.0
+    mysql:8.4
   ```
+
   ::
 ::
 
-### 5. 创建数据库用户
+### 4. 创建数据库用户
 
 ```sql
 -- 连接 MySQL
@@ -155,7 +163,7 @@ mysql -u root -p
 CREATE DATABASE IF NOT EXISTS vt_process_card 
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
-
+4
 -- 创建用户
 CREATE USER 'vt_admin'@'localhost' IDENTIFIED BY '123456';
 
@@ -187,14 +195,14 @@ spring:
     password: 123456  # 修改为你的密码
 ```
 
-2. **配置文件存储路径**
+1. **配置文件存储路径**
 
 ```yaml
 file:
   base-save-path: /your/storage/path  # 修改为你的存储路径
 ```
 
-3. **配置 JWT 密钥**（生产环境必须修改）
+1. **配置 JWT 密钥**（生产环境必须修改）
 
 ```yaml
 jwt:
@@ -207,10 +215,10 @@ jwt:
 
 ```bash
 cd process-card-frontend
-pnpm install
+npm install
 ```
 
-2. **配置 API 地址**（如需要）
+1. **配置 API 地址**（如需要）
 
 编辑 `vite.config.ts` 中的代理配置：
 
@@ -240,6 +248,7 @@ mvn spring-boot:run
 ```
 
 后端启动后访问：
+
 - API 服务：`http://localhost:8080`
 - API 文档：`http://localhost:8080/swagger-ui.html`
 
@@ -249,9 +258,6 @@ mvn spring-boot:run
 cd process-card-frontend
 
 # 开发模式
-pnpm dev
-
-# 或
 npm run dev
 ```
 
@@ -315,6 +321,7 @@ export default {
 ### Q: Flyway 迁移失败
 
 **解决方案**：
+
 1. 检查数据库连接是否正常
 2. 如果是首次运行，确保数据库为空
 3. 如果需要重置，删除 `flyway_schema_history` 表
@@ -332,7 +339,8 @@ nvm install 18
 nvm use 18
 ```
 
-### Q: Maven 下载依赖慢
+22
+nvm use 22en 下载依赖慢
 
 **解决方案**：配置阿里云镜像
 

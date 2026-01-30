@@ -64,7 +64,7 @@ const searchTerm = ref("")
         root: 'border-t border-default dark:border-default'
     }">
         <div class="flex items-center gap-3">
-            <span>© 2025 Process-Card Team. All rights reserved.</span>
+            <span>© 2026 MVIT Team. All rights reserved.</span>
         </div>
         <template #right>
             <UButton v-for="link in footerLinks" :key="link.key" :to="link.to" target="_blank" :icon="link.icon"

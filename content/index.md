@@ -31,7 +31,7 @@
 
 ### 快速开始
 
-从零开始了解和搭建 Process-Card 项目：
+从零开始了解和搭建工艺管理项目：
 
 - [项目介绍](/getting-started/introduction) - 了解项目背景和目标
 - [系统架构](/getting-started/architecture) - 理解整体架构设计
