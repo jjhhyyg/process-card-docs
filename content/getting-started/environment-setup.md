@@ -330,6 +330,7 @@ export default {
 **解决方案**：
 
 1. 检查 `application.yaml` 配置：
+
    ```yaml
    spring:
      jpa:
@@ -342,6 +343,7 @@ export default {
 3. 检查日志中是否有 Hibernate DDL 语句
 
 ::: tip 环境差异
+
 - **开发环境**：JPA 自动建表
 - **测试/生产环境**：使用 Flyway 迁移脚本
 :::

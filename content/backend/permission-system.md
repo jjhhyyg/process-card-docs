@@ -7,6 +7,55 @@ description: Process-Card 后端权限系统的完整实现
 
 Process-Card 实现了完整的 **RBAC（基于角色的访问控制）** 权限体系，采用三级模型：**用户 → 角色 → 权限**。
 
+### 权限关系模型
+
+```mermaid
+erDiagram
+    USER ||--o{ USER_ROLES : has
+    ROLE ||--o{ USER_ROLES : "assigned to"
+    ROLE ||--o{ ROLE_PERMISSIONS : has
+    PERMISSION ||--o{ ROLE_PERMISSIONS : "granted to"
+    
+    USER {
+        Integer userId PK
+        String username UK "唯一用户名"
+        String password "BCrypt加密"
+        String displayName "显示名称"
+    }
+    
+    ROLE {
+        Integer roleId PK
+        String roleName UK "角色名称"
+        String roleMark UK "角色标识"
+        Boolean isActive "是否激活"
+    }
+    
+    PERMISSION {
+        Integer permissionId PK
+        String permissionCode UK "权限码(如11,41)"
+        String permissionName UK "权限名称"
+        String permissionDescription "权限描述"
+        String category "分类"
+    }
+    
+    USER_ROLES {
+        Integer userId FK
+        Integer roleId FK
+    }
+    
+    ROLE_PERMISSIONS {
+        Integer roleId FK
+        Integer permissionId FK
+    }
+```
+
+**关系说明**：
+- 一个用户可以拥有多个角色（多对多）
+- 一个角色可以分配给多个用户（多对多）
+- 一个角色可以拥有多个权限（多对多）
+- 一个权限可以授予多个角色（多对多）
+- 用户的最终权限 = 所有角色的权限并集
+
 ## 权限码体系
 
 ### 分级编码规则
@@ -142,6 +191,72 @@ public class User {
 ```
 
 ## 权限验证流程
+
+### 流程图解
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as 客户端
+    participant Controller as Controller层
+    participant Filter as JwtAuthenticationFilter
+    participant Aspect as PermissionAspect
+    participant SecurityContext as SecurityContext
+    participant Service as Service层
+    participant DB as 数据库
+    
+    rect rgb(230, 240, 255)
+    note over Client,DB: 阶段1：用户登录与Token生成
+    Client->>+Controller: POST /login (username, password)
+    Controller->>+Service: login(username, password)
+    Service->>+DB: 查询用户信息
+    DB-->>-Service: User + Roles
+    Service->>+DB: 查询所有角色的权限
+    DB-->>-Service: List<Permission>
+    Service->>Service: 聚合权限码列表<br/>permissionCodes = ["0","11","41",...]<br/>(所有角色权限并集)
+    Service->>Service: 生成JWT Token<br/>包含: userId, username,<br/>roleMark, permissionCodes
+    Service-->>-Controller: UserInfoResponse<br/>(accessToken, refreshToken)
+    Controller-->>-Client: 返回Token
+    end
+    
+    rect rgb(240, 255, 240)
+    note over Client,DB: 阶段2：携带Token访问受保护API
+    Client->>+Controller: GET /api/users<br/>Header: Authorization: Bearer <token>
+    Controller->>+Filter: doFilterInternal()
+    Filter->>Filter: 提取Token
+    Filter->>Filter: 验证Token有效性<br/>(签名、过期时间)
+    Filter->>Filter: 解析Token获取:<br/>userId, username,<br/>roleMark, permissionCodes
+    Filter->>Filter: 构建JwtUserDetails<br/>(包含权限列表)
+    Filter->>+SecurityContext: 设置Authentication对象
+    SecurityContext-->>-Filter: 认证上下文已设置
+    Filter-->>Controller: 继续过滤器链
+    end
+    
+    rect rgb(255, 245, 230)
+    note over Client,DB: 阶段3：权限验证切面拦截
+    Controller->>+Aspect: @RequirePermission(["11"])<br/>checkPermission()
+    Aspect->>+SecurityContext: getAuthentication()
+    SecurityContext-->>-Aspect: JwtUserDetails<br/>(permissionCodes=["0","11","41",...])
+    Aspect->>Aspect: 比对权限:<br/>用户权限包含"11"?
+    alt 权限匹配成功
+        Aspect-->>Controller: 放行
+        Controller->>+Service: 执行业务逻辑
+        Service->>+DB: 数据库操作
+        DB-->>-Service: 返回数据
+        Service-->>-Controller: 业务结果
+        Controller-->>-Client: HTTP 200 + 数据
+    else 权限不足
+        Aspect-->>Controller: 抛出WrongAuthorizationException
+        Controller-->>Client: HTTP 403 Forbidden<br/>"权限不足，需要权限: 11"
+    end
+    end
+```
+
+**流程说明**：
+
+1. **登录阶段**：用户登录时，系统聚合所有角色的权限码，生成包含权限列表的JWT Token
+2. **认证阶段**：每次API请求时，JWT过滤器验证Token并将用户信息（含权限）注入SecurityContext
+3. **授权阶段**：权限切面拦截`@RequirePermission`注解的方法，验证用户是否拥有所需权限
 
 ### 1. JWT Token 生成
 
