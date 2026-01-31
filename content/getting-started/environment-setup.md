@@ -159,11 +159,11 @@ description: '开发环境配置与项目启动指南'
 -- 连接 MySQL
 mysql -u root -p
 
--- 创建数据库（Flyway 会自动创建，但可以手动创建）
+-- 创建数据库
 CREATE DATABASE IF NOT EXISTS vt_process_card 
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
-4
+
 -- 创建用户
 CREATE USER 'vt_admin'@'localhost' IDENTIFIED BY '123456';
 
@@ -171,6 +171,11 @@ CREATE USER 'vt_admin'@'localhost' IDENTIFIED BY '123456';
 GRANT ALL PRIVILEGES ON vt_process_card.* TO 'vt_admin'@'localhost';
 FLUSH PRIVILEGES;
 ```
+
+::: tip 开发环境说明
+在开发环境中，数据库表结构由 JPA 实体类自动生成。  
+Flyway 迁移脚本仅在测试和生产环境中使用。
+:::
 
 ## 项目配置
 
@@ -269,7 +274,7 @@ npm run dev
 flowchart LR
     subgraph Backend["后端启动"]
         B1["检查 JDK 21"] --> B2["Maven 编译"]
-        B2 --> B3["Flyway 迁移"]
+        B2 --> B3["JPA 自动建表<br/>(开发环境)"]
         B3 --> B4["启动 Spring Boot"]
         B4 --> B5["监听 8080 端口"]
     end
@@ -318,17 +323,28 @@ export default {
 }
 ```
 
-### Q: Flyway 迁移失败
+### Q: 数据库表未创建
+
+**原因**：开发环境依赖 JPA 自动建表
 
 **解决方案**：
 
-1. 检查数据库连接是否正常
-2. 如果是首次运行，确保数据库为空
-3. 如果需要重置，删除 `flyway_schema_history` 表
+1. 检查 `application.yaml` 配置：
+   ```yaml
+   spring:
+     jpa:
+       generate-ddl: true
+       hibernate:
+         ddl-auto: update
+   ```
 
-```sql
-DROP TABLE IF EXISTS flyway_schema_history;
-```
+2. 确保实体类包路径正确
+3. 检查日志中是否有 Hibernate DDL 语句
+
+::: tip 环境差异
+- **开发环境**：JPA 自动建表
+- **测试/生产环境**：使用 Flyway 迁移脚本
+:::
 
 ### Q: Node.js 版本不兼容
 

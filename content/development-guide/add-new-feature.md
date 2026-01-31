@@ -10,7 +10,7 @@ description: '从零开发新功能的完整指南'
 ```mermaid
 flowchart TB
     subgraph Phase1["第一阶段：设计"]
-        A1["需求分析"] --> A2["数据库设计"]
+        A1["需求分析"] --> A2["实体类设计"]
         A2 --> A3["API 设计"]
     end
     
@@ -43,9 +43,32 @@ flowchart TB
 - 删除设备
 - 设备状态管理
 
-### 2. 数据库设计
+### 2. 实体类设计
 
-创建 Flyway 迁移脚本：
+::: tip 开发流程
+- **开发环境**：直接创建 JPA 实体类，数据库表由 JPA 自动生成
+- **测试环境**：根据实体类编写 Flyway 迁移脚本，在测试数据库中验证
+- **生产环境**：使用 Flyway 迁移脚本进行数据库更新
+:::
+
+先设计实体类结构：
+
+```java
+// 实体类结构设计
+public class Equipment {
+    private Integer equipmentId;       // 主键
+    private String name;               // 设备名称
+    private String model;              // 型号
+    private String serialNumber;       // 序列号（唯一）
+    private String status;             // 状态
+    private LocalDate purchaseDate;    // 采购日期
+    private String description;        // 描述
+    private LocalDateTime createdAt;   // 创建时间
+    private LocalDateTime updatedAt;   // 更新时间
+}
+```
+
+在开发环境中，这个实体类会自动生成对应的数据库表。到测试环境时，再编写 Flyway 迁移脚本：
 
 ```sql
 -- V2__add_equipment_table.sql

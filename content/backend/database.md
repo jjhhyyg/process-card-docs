@@ -7,7 +7,15 @@ description: '数据库表结构与 Flyway 迁移管理'
 
 ## 数据库概览
 
-项目使用 **MySQL 8.0** 作为主数据库，采用 **Flyway** 进行版本控制和迁移管理。
+项目使用 **MySQL 8.0** 作为主数据库，不同环境下采用不同的数据库管理策略。
+
+### 环境管理策略
+
+::: info 开发流程
+1. **开发环境**：基于 JPA 实体类，数据库表由 Hibernate 自动生成（`generate-ddl: true`）
+2. **测试环境**：根据实体类编写 Flyway 迁移脚本，在测试数据库中验证
+3. **生产环境**：使用 Flyway 迁移脚本进行数据库更新，先在本地生产环境测试，确认无误后部署到现场
+:::
 
 ### 数据库配置
 
@@ -312,6 +320,11 @@ erDiagram
 
 ## Flyway 迁移管理
 
+::: warning 使用范围
+Flyway 迁移脚本仅用于 **测试环境** 和 **生产环境**。  
+开发环境中，数据库表结构由 JPA 实体类自动生成。
+:::
+
 ### 迁移文件命名规则
 
 ```
@@ -394,7 +407,38 @@ database:
 
 ## 最佳实践
 
-### 1. 迁移脚本编写
+### 1. 开发环境：实体类开发
+
+在开发环境中，直接创建或修改 JPA 实体类：
+
+```java
+@Entity
+@Table(name = "equipment")
+public class Equipment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer equipmentId;
+    
+    @Column(nullable = false)
+    private String name;
+    
+    // ... 其他字段
+}
+```
+
+配置文件中启用自动建表：
+
+```yaml
+spring:
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update  # 开发环境使用
+```
+
+### 2. 测试环境：编写迁移脚本
+
+根据实体类编写 Flyway 迁移脚本：
 
 ```sql
 -- 使用事务（如果支持）
